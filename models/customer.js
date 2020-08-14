@@ -1,10 +1,11 @@
 /** Customer for Lunchly */
 
+//Imports
 const db = require("../db");
 const Reservation = require("./reservation");
+const { NotFoundError } = require('../expressError')
 
-/** Customer of the restaurant. */
-
+/** Class representing a customer of the restaurant. */
 class Customer {
   constructor({ id, firstName, lastName, phone, notes }) {
     this.id = id;
@@ -14,8 +15,7 @@ class Customer {
     this.notes = notes;
   }
 
-  /** find all customers. */
-
+  /** Gets and returns all customers. */
   static async all() {
     const results = await db.query(
       `SELECT id,
@@ -29,8 +29,7 @@ class Customer {
     return results.rows.map(c => new Customer(c));
   }
 
-  /** get a customer by ID. */
-
+  /** Returns a customer given an ID. */
   static async get(id) {
     const results = await db.query(
       `SELECT id,
@@ -46,20 +45,20 @@ class Customer {
     const customer = results.rows[0];
 
     if (customer === undefined) {
-      const err = new Error(`No such customer: ${id}`);
-      err.status = 404;
+      const err = new NotFoundError(`No such customer: ${id}`);
+      //err.status = 404;
       throw err;
     }
 
     return new Customer(customer);
   }
 
-  /** get a customer by name */
-
+  /** Returns matching customers given a search string. */
   static async getBySearch(searchTerm) {
     let searchTerms = searchTerm.split(" ");
-    // this = Customer class. So can call other static methods.
     searchTerms = searchTerms.map(term => this.titleCase(term));
+
+    //Construct SQL query for search string
     let selectStr = `SELECT id, 
                     first_name AS "firstName",
                     last_name AS "lastName", 
@@ -70,28 +69,26 @@ class Customer {
     for (let i = 1; i < searchTerms.length + 1; i++) {
       selectStr += `first_name = $${i} OR last_name = $${i} OR `;
     }
-    selectStr = selectStr.slice(0, -3);
+    selectStr = selectStr.slice(0, -3); //use join() instead, would be more efficient; arbitrary slices harder to read
 
     const results = await db.query(selectStr, searchTerms);
 
     const customers = results.rows;
 
     if (customers === undefined) {
-      const err = new Error(`No such customer: ${id}`);
-      err.status = 404;
+      const err = new NotFoundError(`No such customer: ${id}`);
+      // err.status = 404;
       throw err;
     }
     return customers.map(customer => new Customer(customer));
   }
 
-  /** get all reservations for this customer. */
-
+  /** Gets and returns all reservations for this customer instance. */
   async getReservations() {
     return await Reservation.getReservationsForCustomer(this.id);
   }
 
-  /** save this customer. */
-
+  /** Save the customer instance's data into the database. */
   async save() {
     if (this.id === undefined) {
       const result = await db.query(
@@ -123,11 +120,31 @@ class Customer {
   fullName() {
     return `${this.firstName} ${this.lastName}`;
   }
-  /** Returns a title cased name  */
+
+  /** Given a name, returns it in title case. */
   static titleCase(name) {
     name = name.toLowerCase();
     return name[0].toUpperCase() + name.slice(1);
   }
+
+  /** Returns the top 10 customers by reservation volume. */
+  static async getTopTenByReservations() { //ask about quotation marks and why they're necessary
+    const results = await db.query(`
+      SELECT customers.id,
+             first_name AS "firstName",
+             last_name AS "lastName",
+             customers.phone, customers.notes,
+             COUNT(reservations.id) AS num_reservations
+      FROM customers
+      JOIN reservations
+      ON customers.id = reservations.customer_id
+      GROUP BY customers.id
+      ORDER BY num_reservations DESC
+      LIMIT 10;
+      `)
+    return results.rows.map(customer => new Customer(customer))
+  }
 }
 
+//Exports
 module.exports = Customer;

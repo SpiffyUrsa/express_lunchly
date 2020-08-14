@@ -1,14 +1,14 @@
 /** Routes for Lunchly */
 
+//Imports
 const express = require("express");
-
 const Customer = require("./models/customer");
 const Reservation = require("./models/reservation");
 
+//Router
 const router = new express.Router();
 
 /** Homepage: show list of customers. */
-
 router.get("/", async function (req, res, next) {
   try {
     const customers = await Customer.all();
@@ -19,7 +19,6 @@ router.get("/", async function (req, res, next) {
 });
 
 /** Show a list of customers matching the search term. */
-
 router.post("/", async function (req, res, next) {
   try {
     let searchTerm = req.body.searchTerm;
@@ -30,8 +29,18 @@ router.post("/", async function (req, res, next) {
   }
 })
 
-/** Form to add a new customer. */
+/** Shows a list of the top ten customers by reservation volume. */
+router.get('/topten', async function (req, res, next) {
+  try {
+    const customers = await Customer.getTopTenByReservations()
+    return res.render('top_ten_customer_list.html', { customers })
+  }
+  catch (error) {
+    return next(error)
+  }
+})
 
+/** Form to add a new customer. */
 router.get("/add/", async function (req, res, next) {
   try {
     return res.render("customer_new_form.html");
@@ -41,7 +50,6 @@ router.get("/add/", async function (req, res, next) {
 });
 
 /** Handle adding a new customer. */
-
 router.post("/add/", async function (req, res, next) {
   try {
     const { firstName, lastName, phone, notes } = req.body;
@@ -55,7 +63,6 @@ router.post("/add/", async function (req, res, next) {
 });
 
 /** Show a customer, given their ID. */
-
 router.get("/:id/", async function (req, res, next) {
   try {
     const customer = await Customer.get(req.params.id);
@@ -68,10 +75,7 @@ router.get("/:id/", async function (req, res, next) {
   }
 });
 
-
-
 /** Show form to edit a customer. */
-
 router.get("/:id/edit/", async function (req, res, next) {
   try {
     const customer = await Customer.get(req.params.id);
@@ -83,10 +87,9 @@ router.get("/:id/edit/", async function (req, res, next) {
 });
 
 /** Handle editing a customer. */
-
 router.post("/:id/edit/", async function (req, res, next) {
   try {
-    const customer = await Customer.get(req.params.id);
+    const customer = await Customer.get(req.params.id); //destructuring
     customer.firstName = req.body.firstName;
     customer.lastName = req.body.lastName;
     customer.phone = req.body.phone;
@@ -99,8 +102,10 @@ router.post("/:id/edit/", async function (req, res, next) {
   }
 });
 
-/** Handle adding a new reservation. */
-
+/** Handle adding a new reservation. 
+ * Accepts returns redirects
+ * 
+*/
 router.post("/:id/add-reservation/", async function (req, res, next) {
   try {
     const customerId = req.params.id;
@@ -122,4 +127,5 @@ router.post("/:id/add-reservation/", async function (req, res, next) {
   }
 });
 
+//Export
 module.exports = router;

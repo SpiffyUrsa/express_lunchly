@@ -1,11 +1,10 @@
 /** Reservation for Lunchly */
 
+// Imports
 const moment = require("moment");
-
 const db = require("../db");
 
-/** A reservation for a party */
-
+/** Class representing a reservation for a party. */
 class Reservation {
   constructor({ id, customerId, numGuests, startAt, notes }) {
     this.id = id;
@@ -15,56 +14,54 @@ class Reservation {
     this.notes = notes;
   }
 
-  /** formatter for startAt */
-
+  /** Formatter for startAt */
   getformattedStartAt() {
     return moment(this.startAt).format("MMMM Do YYYY, h:mm a");
   }
 
-  /** given a customer id, find their reservations. */
-
+  /** Given a customer id, return their reservations. */
   static async getReservationsForCustomer(customerId) {
     const results = await db.query(
-          `SELECT id,
+      `SELECT id,
                   customer_id AS "customerId",
                   num_guests AS "numGuests",
                   start_at AS "startAt",
                   notes AS "notes"
            FROM reservations
            WHERE customer_id = $1`,
-        [customerId],
+      [customerId],
     );
 
     return results.rows.map(row => new Reservation(row));
   }
 
   /** Method for adding new reservations or updating existing reservations */
-   async save() {
-     if (this.id === undefined) {
-       const result = await db.query(
-         `INSERT INTO reservations (customerId, numGuests, startAt, notes)
+  async save() {
+    if (this.id === undefined) {
+      const result = await db.query(
+        `INSERT INTO reservations (customerId, numGuests, startAt, notes)
          VALUES ($1, $2, $3, $4)
          RETURNING id`,
-         [this.customerId, this.numGuests, this.startAt, this.notes]
-       );
-       this.id = result.rows[0];
-     } else {
-       await db.query(
-         `UPDATE reservations
+        [this.customerId, this.numGuests, this.startAt, this.notes]
+      );
+      this.id = result.rows[0];
+    } else {
+      await db.query(
+        `UPDATE reservations
          SET customerId = $1,
          numGuests = $2,
          startAt = $3,
          notes = $4
          WHERE id = $5`,
-         [this.customerId, 
-          this.numGuests, 
-          this.startAt, 
-          this.notes,
-         ]
-       );
-     }
-   }
+        [this.customerId,
+        this.numGuests,
+        this.startAt,
+        this.notes,
+        ]
+      );
+    }
+  }
 }
 
-
+// Exports
 module.exports = Reservation;
