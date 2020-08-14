@@ -18,6 +18,18 @@ router.get("/", async function (req, res, next) {
   }
 });
 
+/** Show a list of customers matching the search term. */
+
+router.post("/", async function (req, res, next) {
+  try {
+    let searchTerm = req.body.searchTerm;
+    const customers = await Customer.getBySearch(searchTerm);
+    return res.render("customer_list.html", { customers });
+  } catch (err) {
+    return next(err);
+  }
+})
+
 /** Form to add a new customer. */
 
 router.get("/add/", async function (req, res, next) {
@@ -55,6 +67,8 @@ router.get("/:id/", async function (req, res, next) {
     return next(err);
   }
 });
+
+
 
 /** Show form to edit a customer. */
 
