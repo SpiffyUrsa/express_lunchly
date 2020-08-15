@@ -12,8 +12,24 @@ class Customer {
     this.firstName = firstName;
     this.lastName = lastName;
     this.phone = phone;
-    this.notes = notes;
+    this._notes = notes;
   }
+
+  //Getter & Setters
+  get notes() {
+    return this._notes;
+  }
+
+  set notes(val) {
+    if (!!val === false){
+      this._notes = "testing";
+      throw new Error("Notes should not be falsy");
+    }
+    else{
+      this._notes = val;
+    }
+  }
+
 
   /** Gets and returns all customers. */
   static async all() {
@@ -128,7 +144,7 @@ class Customer {
   }
 
   /** Returns the top 10 customers by reservation volume. */
-  static async getTopTenByReservations() { //ask about quotation marks and why they're necessary
+  static async getTopTenByReservations() { //Postgres always lowercases the column names unless otherwise
     const results = await db.query(`
       SELECT customers.id,
              first_name AS "firstName",

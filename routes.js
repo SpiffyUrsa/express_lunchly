@@ -93,7 +93,7 @@ router.post("/:id/edit/", async function (req, res, next) {
     customer.firstName = req.body.firstName;
     customer.lastName = req.body.lastName;
     customer.phone = req.body.phone;
-    customer.notes = req.body.notes;
+    customer.notes = req.body.notes; //should use getter
     await customer.save();
 
     return res.redirect(`/${customer.id}/`);
